@@ -1,0 +1,71 @@
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import Github from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
+
+export const { signIn, signOut, auth, handlers } = NextAuth({
+  providers: [
+    Credentials({
+      credentials: {
+        email: { label: "Email", type: "email", placeholder: "Enter Email" },
+        password: {
+          label: "Password",
+          type: "password",
+          placeholder: "Enter password",
+        },
+      },
+      async authorize(credentials) {
+        console.log("credentialss", credentials);
+        let user = null;
+
+        //get and validate the user
+
+        user = {
+          id: 1,
+          name: "Test",
+          email: credentials.email,
+          role: "User",
+        };
+
+        if (!user) {
+          return null;
+        }
+
+        return user;
+      },
+    }),
+    Github({
+      // profile(profile) {},
+    }),
+    Google,
+  ],
+  callbacks: {
+    authorized({ request: { nextUrl }, auth }) {
+      const isLoggedIn = !!auth?.user;
+      const role = auth?.user?.role || "User";
+      const { pathname } = nextUrl;
+
+      if (pathname.startsWith("/auth/signin") && isLoggedIn) {
+        return Response.redirect(new URL("/", nextUrl));
+      } else if (pathname.startsWith("/admin") && !(role === "Admin")) {
+        return Response.redirect(new URL("/", nextUrl));
+      }
+      return !!auth;
+    },
+    jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+      }
+      return token;
+    },
+    session({ session, token }) {
+      session.user.id = token.id;
+      session.user.role = token.role;
+      return session;
+    },
+  },
+  pages: {
+    signIn: "/auth/signin",
+  },
+});
