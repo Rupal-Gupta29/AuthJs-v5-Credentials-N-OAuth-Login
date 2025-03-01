@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Github from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
+import { loginSchema } from "./utils/authSchema";
 
 export const { signIn, signOut, auth, handlers } = NextAuth({
   providers: [
@@ -19,6 +20,13 @@ export const { signIn, signOut, auth, handlers } = NextAuth({
         let user = null;
 
         //get and validate the user
+
+        const parsedCredentials = loginSchema.safeParse(credentials);
+
+        if (!parsedCredentials.success) {
+          console.log("Invalid credentials:", parsedCredentials.error.errors);
+          return null;
+        }
 
         user = {
           id: 1,

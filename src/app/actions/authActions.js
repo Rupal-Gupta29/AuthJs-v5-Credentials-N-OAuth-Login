@@ -7,18 +7,17 @@ export async function SignOutAction() {
 }
 
 export async function CredentialsLoginAction(userData) {
-  const { email, password } = userData;
-
   try {
-    await signIn("credentials", { email, password, redirectTo: "/" });
+    await signIn("credentials", {
+      ...userData,
+      redirect: false,
+    });
+    return { success: true };
   } catch (error) {
-    console.log("signin error", error);
     if (error instanceof AuthError) {
-      console.error("Auth Error:", error.message);
-    } else {
-      console.error("Unexpected Error:", error.message);
+      return { error: "Invalid credentials!" };
     }
-    throw error;
+    return { error: "An unexpected error occurred." };
   }
 }
 
