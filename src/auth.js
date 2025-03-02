@@ -49,16 +49,22 @@ export const { signIn, signOut, auth, handlers } = NextAuth({
   ],
   callbacks: {
     authorized({ request: { nextUrl }, auth }) {
+      const publicRoutes = ["/auth/signin", "/auth/signup"];
+      const protectedRoutes = ["/", "/admin"];
       const isLoggedIn = !!auth?.user;
-      const role = auth?.user?.role || "User";
       const { pathname } = nextUrl;
 
-      if (pathname.startsWith("/auth/signin") && isLoggedIn) {
-        return Response.redirect(new URL("/", nextUrl));
-      } else if (pathname.startsWith("/admin") && !(role === "Admin")) {
-        return Response.redirect(new URL("/", nextUrl));
+      if (publicRoutes.includes(pathname)) {
+        if (isLoggedIn) {
+          return Response.redirect(new URL("/", nextUrl));
+        }
+        return true;
       }
-      return !!auth;
+      if (protectedRoutes.includes(pathname) && !isLoggedIn) {
+        return Response.redirect(new URL("/auth/signin", nextUrl));
+      }
+
+      return true;
     },
     jwt({ token, user }) {
       if (user) {
