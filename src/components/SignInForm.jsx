@@ -20,12 +20,11 @@ const SignInForm = () => {
   const onSubmit = async (data) => {
     try {
       const response = await CredentialsLoginAction(data);
-      console.log("Form Response", response);
       if (response.success) {
         router.push("/");
       } else if (response?.error) {
         console.log("error", response.error);
-        setErrorMsg(response.error);
+        setErrorMsg(response.error || "Something went wrong");
       }
     } catch (error) {
       console.log(error.message);

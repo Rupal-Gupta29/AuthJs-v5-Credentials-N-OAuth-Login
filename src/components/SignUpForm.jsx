@@ -4,6 +4,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signUpSchema } from "@/utils/authSchema";
 import { registerUserAction } from "@/app/actions/authActions";
+import { toast } from "react-toastify";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const SignUpForm = () => {
   const {
@@ -12,11 +15,18 @@ const SignUpForm = () => {
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(signUpSchema) });
 
+  const [errorMsg, setErrorMsg] = useState("");
+  const router = useRouter();
+
   const onSubmit = async (data) => {
     try {
-      console.log("data", data);
       const result = await registerUserAction(data);
-      
+      if (result.success) {
+        toast.success(result.message);
+        router.push("/auth/signin");
+      } else if (result.error) {
+        setErrorMsg(result.error || "Something went wrong");
+      }
     } catch (error) {
       console.log(error.message);
     }
@@ -105,6 +115,8 @@ const SignUpForm = () => {
       >
         {isSubmitting ? "Signing in..." : "Sign in"}
       </button>
+
+      {errorMsg && <p className="mt-2 text-sm text-red-600">{errorMsg}</p>}
 
       <p className="text-sm font-light text-gray-500">
         Already have an account?{" "}

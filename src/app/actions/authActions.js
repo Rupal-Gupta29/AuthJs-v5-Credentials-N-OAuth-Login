@@ -3,6 +3,7 @@ import { signOut, signIn } from "@/auth";
 import { AuthError } from "next-auth";
 import { signUpSchema } from "@/utils/authSchema";
 import bcrypt from "bcryptjs";
+import { PrismaClient } from "@prisma/client";
 
 export async function SignOutAction() {
   await signOut({ redirectTo: "/auth/signin" });
@@ -24,15 +25,49 @@ export async function CredentialsLoginAction(userData) {
 }
 
 export async function registerUserAction(userData) {
-  // try {
-  //   const { username, email, password, confirmPassword } = userData;
-  //   const parsedCredentials = signUpSchema.safeParse(userData);
-  //   if(!parsedCredentials.success){
-  //   }
-  //   const salt = await bcrypt.genSalt(10);
-  //   const hashedPassword = await bcrypt.hash(password, salt);
-  //   console.log("hashedpassword", hashedPassword);
-  // } catch (error) {}
+  try {
+    const { username, email, password, confirmPassword } = userData;
+    const parsedCredentials = signUpSchema.safeParse(userData);
+
+    if (!parsedCredentials.success) {
+      return { error: "Invalid credentials." };
+    }
+
+    const prisma = new PrismaClient();
+    const findUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    console.log("finduserr", findUser);
+
+    if (findUser) {
+      return {
+        error: "User already exists. Please try with a different email.",
+      };
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    console.log("hashedpassword", hashedPassword);
+
+    const newUser = {
+      username,
+      email,
+      password: hashedPassword,
+    };
+
+    const newlyCreatedUser = await prisma.user.create({
+      data: newUser,
+    });
+
+    if (newlyCreatedUser) {
+      console.log("newlyCreatedUser", newlyCreatedUser);
+      return { success: true, message: "User created successfully." };
+    }
+  } catch (error) {
+    console.log("error", error);
+    return { error: "An unexpected error occured." };
+  }
 }
 
 export async function SocialLoginAction(formData) {
