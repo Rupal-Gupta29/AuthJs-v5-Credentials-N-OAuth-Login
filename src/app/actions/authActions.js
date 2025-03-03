@@ -3,18 +3,28 @@ import { signOut, signIn } from "@/auth";
 import { AuthError } from "next-auth";
 import { signUpSchema } from "@/utils/authSchema";
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/utils/prisma";
 
 export async function SignOutAction() {
-  await signOut({ redirectTo: "/auth/signin" });
+  await signOut();
+  return { success: true };
 }
 
 export async function CredentialsLoginAction(userData) {
   try {
+    const findUser = await prisma.user.findUnique({
+      where: { email: userData.email },
+    });
+
+    if (!findUser) {
+      return { error: "User does not exists. Please register yourself first." };
+    }
+
     await signIn("credentials", {
       ...userData,
       redirect: false,
     });
+
     return { success: true };
   } catch (error) {
     if (error instanceof AuthError) {
@@ -26,19 +36,16 @@ export async function CredentialsLoginAction(userData) {
 
 export async function registerUserAction(userData) {
   try {
-    const { username, email, password, confirmPassword } = userData;
+    const { username, email, password } = userData;
     const parsedCredentials = signUpSchema.safeParse(userData);
 
     if (!parsedCredentials.success) {
       return { error: "Invalid credentials." };
     }
 
-    const prisma = new PrismaClient();
     const findUser = await prisma.user.findUnique({
       where: { email },
     });
-
-    console.log("finduserr", findUser);
 
     if (findUser) {
       return {
@@ -48,7 +55,6 @@ export async function registerUserAction(userData) {
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    console.log("hashedpassword", hashedPassword);
 
     const newUser = {
       username,
@@ -61,12 +67,13 @@ export async function registerUserAction(userData) {
     });
 
     if (newlyCreatedUser) {
-      console.log("newlyCreatedUser", newlyCreatedUser);
       return { success: true, message: "User created successfully." };
     }
   } catch (error) {
     console.log("error", error);
     return { error: "An unexpected error occured." };
+  } finally {
+    await prisma.$disconnect();
   }
 }
 

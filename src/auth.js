@@ -3,6 +3,8 @@ import Credentials from "next-auth/providers/credentials";
 import Github from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import { loginSchema } from "./utils/authSchema";
+import prisma from "./utils/prisma";
+import bcrypt from "bcryptjs";
 
 export const { signIn, signOut, auth, handlers } = NextAuth({
   providers: [
@@ -16,30 +18,38 @@ export const { signIn, signOut, auth, handlers } = NextAuth({
         },
       },
       async authorize(credentials) {
-        console.log("credentialss", credentials);
-        let user = null;
-
-        //get and validate the user
-
         const parsedCredentials = loginSchema.safeParse(credentials);
 
         if (!parsedCredentials.success) {
-          console.log("Invalid credentials:", parsedCredentials.error.errors);
+          console.log("Invalid data:", parsedCredentials.error.errors);
           return null;
         }
 
-        user = {
-          id: 1,
-          name: "Test",
-          email: credentials.email,
-          role: "User",
-        };
+        const findUser = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        });
 
-        if (!user) {
+        if (!findUser) {
+          console.log("User not found");
           return null;
         }
 
-        return user;
+        if (!findUser.password) {
+          console.log("User does not have a password set.");
+          return null;
+        }
+
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password,
+          findUser.password
+        );
+
+        if (!isPasswordValid) {
+          console.log("Invalid Password");
+          return null;
+        }
+
+        return { ...findUser };
       },
     }),
     Github({

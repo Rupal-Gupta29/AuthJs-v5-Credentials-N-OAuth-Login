@@ -20,6 +20,7 @@ const SignUpForm = () => {
 
   const onSubmit = async (data) => {
     try {
+      setErrorMsg("");
       const result = await registerUserAction(data);
       if (result.success) {
         toast.success(result.message);

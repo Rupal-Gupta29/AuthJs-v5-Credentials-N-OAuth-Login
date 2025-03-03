@@ -1,9 +1,15 @@
 "use client";
 import { SignOutAction } from "@/app/actions/authActions";
+import { useRouter } from "next/navigation";
 
 const SignOutBtn = () => {
+  const router = useRouter();
+
   const handleLogout = async () => {
-    await SignOutAction();
+    const response = await SignOutAction();
+    if (response.success) {
+      router.push("/auth/signin");
+    }
   };
 
   return (

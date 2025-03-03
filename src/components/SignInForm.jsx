@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "@/utils/authSchema";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 const SignInForm = () => {
   const {
@@ -19,12 +20,22 @@ const SignInForm = () => {
 
   const onSubmit = async (data) => {
     try {
+      setErrorMsg("");
       const response = await CredentialsLoginAction(data);
-      if (response.success) {
+      if (response?.success) {
         router.push("/");
+        return;
       } else if (response?.error) {
-        console.log("error", response.error);
-        setErrorMsg(response.error || "Something went wrong");
+        if (
+          response.error ===
+          "User does not exists. Please register yourself first."
+        ) {
+          toast.error(response.error);
+          router.push("/auth/signup");
+          return;
+        }
+        console.log("Error", response.error);
+        setErrorMsg(response.error || "Something went wrong.");
       }
     } catch (error) {
       console.log(error.message);
