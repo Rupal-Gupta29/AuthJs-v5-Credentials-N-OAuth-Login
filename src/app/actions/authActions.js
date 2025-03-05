@@ -36,7 +36,7 @@ export async function CredentialsLoginAction(userData) {
 
 export async function registerUserAction(userData) {
   try {
-    const { username, email, password } = userData;
+    const { name, email, password } = userData;
     const parsedCredentials = signUpSchema.safeParse(userData);
 
     if (!parsedCredentials.success) {
@@ -49,7 +49,7 @@ export async function registerUserAction(userData) {
 
     if (findUser) {
       return {
-        error: "User already exists. Please try with a different email.",
+        error: "User already exists. Please log into your accout.",
       };
     }
 
@@ -57,7 +57,7 @@ export async function registerUserAction(userData) {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const newUser = {
-      username,
+      name,
       email,
       password: hashedPassword,
     };

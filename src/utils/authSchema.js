@@ -13,7 +13,7 @@ export const loginSchema = z.object({
 
 export const signUpSchema = z
   .object({
-    username: z
+    name: z
       .string({ required_error: "Username is required." })
       .min(2, "Username must have 2 or more characters.")
       .max(20, "Username must have atmost 20 characters."),
